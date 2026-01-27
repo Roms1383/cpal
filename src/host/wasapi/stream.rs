@@ -178,7 +178,9 @@ impl Stream {
 impl Drop for Stream {
     fn drop(&mut self) {
         if self.push_command(Command::Terminate).is_ok() {
-            self.thread.take().unwrap().join().unwrap();
+            if let Some(x) = self.thread.take() {
+                let _ = x.join();
+            }
             unsafe {
                 let _ = Foundation::CloseHandle(self.pending_scheduled_event);
             }
@@ -440,7 +442,7 @@ fn process_input(
 
             match result {
                 // TODO: Can this happen?
-                Err(e) if e.code() == Audio::AUDCLNT_S_BUFFER_EMPTY => continue,
+                Err(e) if e.code() == Audio::AUDCLNT_S_BUFFER_EMPTY.into() => continue,
                 Err(e) => {
                     error_callback(windows_err_to_cpal_err(e));
                     return ControlFlow::Break;

@@ -1207,7 +1207,11 @@ impl Drop for Stream {
     fn drop(&mut self) {
         self.inner.dropping.store(true, Ordering::Release);
         self.trigger.wakeup();
-        self.thread.take().unwrap().join().unwrap();
+        if let Some(x) = self.thread {
+            if let Some(x) = x.take() {
+                let _ = x.join();
+            }
+        }
     }
 }
 
